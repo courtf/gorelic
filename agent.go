@@ -27,13 +27,13 @@ const (
 
 	//DefaultAgentGuid is plugin ID in NewRelic.
 	//You should not change it unless you want to create your own plugin.
-	DefaultAgentGuid = "com.github.yvasiyarov.GoRelic"
+	DefaultAgentGuid = "com.acmeaom.GoPlugin"
 
 	//CurrentAgentVersion is plugin version
-	CurrentAgentVersion = "0.0.6"
+	CurrentAgentVersion = "0.0.1"
 
 	//DefaultAgentName in NewRelic GUI. You can change it.
-	DefaultAgentName = "Go daemon"
+	DefaultAgentName = "Go Plugin"
 )
 
 //Agent - is NewRelic agent implementation.
@@ -86,6 +86,46 @@ type resettableComponent struct {
 	counters map[int]metrics.Counter
 }
 
+// used by proxyWrapper below to record http statuses
+type statusRecorder struct {
+	http.ResponseWriter
+	writeHeader func(status int)
+}
+
+func (sr statusRecorder) WriteHeader(status int) {
+	sr.writeHeader(status)
+}
+
+type proxyWrapper struct {
+	*tHTTPHandler
+	serveHTTP func(w http.ResponseWriter, req *http.Request)
+}
+
+func (pw proxyWrapper) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	pw.serveHTTP(w, req)
+}
+
+func newProxyWrapper(agent *Agent, proxy *tHTTPHandler) proxyWrapper {
+	return proxyWrapper{
+		proxy,
+		func(w http.ResponseWriter, req *http.Request) {
+			proxy.ServeHTTP(
+				statusRecorder{
+					w,
+					func(status int) {
+						if counter, ok := agent.HTTPStatusCounters[status]; ok {
+							counter.Inc(1)
+						}
+						w.WriteHeader(status)
+					},
+				},
+				req,
+			)
+		},
+	}
+
+}
+
 // newrelic_platform_go.IComponent interface implementation
 func (c resettableComponent) ClearSentData() {
 	c.IComponent.ClearSentData()
@@ -98,11 +138,15 @@ func (c resettableComponent) ClearSentData() {
 func (agent *Agent) WrapHTTPHandlerFunc(h tHTTPHandlerFunc) tHTTPHandlerFunc {
 	agent.CollectHTTPStat = true
 	agent.initTimer()
-	return func(w http.ResponseWriter, req *http.Request) {
-		proxy := newHTTPHandlerFunc(h)
-		proxy.timer = agent.HTTPTimer
-		proxy.ServeHTTP(w, req)
+	proxy := newHTTPHandlerFunc(h)
+	proxy.timer = agent.HTTPTimer
+
+	if agent.CollectHTTPStatuses {
+		pr := newProxyWrapper(agent, proxy)
+		return pr.ServeHTTP
 	}
+
+	return proxy.ServeHTTP
 }
 
 //WrapHTTPHandler  instrument HTTP handler object to collect HTTP metrics
@@ -112,6 +156,11 @@ func (agent *Agent) WrapHTTPHandler(h http.Handler) http.Handler {
 
 	proxy := newHTTPHandler(h)
 	proxy.timer = agent.HTTPTimer
+
+	if agent.CollectHTTPStatuses {
+		return newProxyWrapper(agent, proxy)
+	}
+
 	return proxy
 }
 
