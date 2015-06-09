@@ -1,10 +1,11 @@
 package gorelic
 
 import (
-	metrics "github.com/yvasiyarov/go-metrics"
-	"github.com/yvasiyarov/newrelic_platform_go"
 	"net/http"
 	"time"
+
+	metrics "github.com/courtf/go-metrics"
+	"github.com/courtf/newrelic_platform_go"
 )
 
 type tHTTPHandlerFunc func(http.ResponseWriter, *http.Request)

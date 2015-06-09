@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	metrics "github.com/yvasiyarov/go-metrics"
-	"github.com/yvasiyarov/newrelic_platform_go"
+	metrics "github.com/courtf/go-metrics"
+	"github.com/courtf/newrelic_platform_go"
 )
 
 const (

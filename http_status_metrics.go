@@ -3,8 +3,8 @@ package gorelic
 import (
 	"fmt"
 
-	"github.com/yvasiyarov/go-metrics"
-	"github.com/yvasiyarov/newrelic_platform_go"
+	"github.com/courtf/go-metrics"
+	"github.com/courtf/newrelic_platform_go"
 )
 
 // New metrica collector - counter per each http status code.

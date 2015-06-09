@@ -1,8 +1,9 @@
 package gorelic
 
 import (
-	metrics "github.com/yvasiyarov/go-metrics"
 	"time"
+
+	metrics "github.com/courtf/go-metrics"
 )
 
 type baseTimerMetrica struct {
