@@ -44,6 +44,6 @@ func (handler *tHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 }
 
 func addHTTPMericsToComponent(component newrelic_platform_go.IComponent, timer metrics.Timer) {
-	addMeterMetrics(component, timer, "http/throughput", "requests")
+	addMeterMetrics(component, timer, "http/throughput", "rps")
 	addTimedHistogramMetrics(component, timer, "http/throughput")
 }

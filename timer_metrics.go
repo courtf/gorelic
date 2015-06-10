@@ -2,7 +2,6 @@ package gorelic
 
 import (
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/courtf/go-metrics"
@@ -30,10 +29,6 @@ func addMeterMetrics(component newrelic_platform_go.IComponent, timer metrics.Ti
 }
 
 func GetMeterMetrica(timer metrics.Timer, name, units string) []newrelic_platform_go.IMetrica {
-	if !strings.HasSuffix(units, "/s") {
-		units += "/s"
-	}
-
 	return []newrelic_platform_go.IMetrica{
 		&TimerRate1Metrica{
 			baseTimerMetrica: &baseTimerMetrica{
