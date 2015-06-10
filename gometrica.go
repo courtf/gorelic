@@ -3,7 +3,7 @@ package gorelic
 import (
 	"fmt"
 
-	metrics "github.com/courtf/go-metrics"
+	"github.com/courtf/go-metrics"
 )
 
 const (

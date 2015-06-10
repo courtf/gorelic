@@ -3,7 +3,7 @@ package gorelic
 import (
 	"time"
 
-	metrics "github.com/courtf/go-metrics"
+	"github.com/courtf/go-metrics"
 	"github.com/courtf/newrelic_platform_go"
 )
 

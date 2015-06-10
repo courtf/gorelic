@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	metrics "github.com/courtf/go-metrics"
+	"github.com/courtf/go-metrics"
 	"github.com/courtf/newrelic_platform_go"
 )
 
