@@ -227,7 +227,7 @@ func (agent *Agent) initTimer() {
 //Initialize metrics.Counters objects, used to collect HTTP statuses
 func (agent *Agent) initStatusCounters(statuses []int) {
 	for _, statusCode := range statuses {
-		agent.dataSource.Register(statusKeyFunc(statusCode), metrics.NewCounter)
+		agent.dataSource.Register(statusKeyFunc(statusCode), metrics.NewCounter())
 	}
 }
 

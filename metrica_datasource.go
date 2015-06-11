@@ -118,21 +118,21 @@ func (ds metricaDataSource) GetTimerValue(key string, tf TimerFunc, percentile f
 		case TimerCount:
 			return float64(timer.Count()), nil
 		case TimerMax:
-			return float64(timer.Max()), nil
+			return float64(timer.Max()) / float64(time.Millisecond), nil
 		case TimerMean:
-			return float64(timer.Mean()), nil
+			return float64(timer.Mean()) / float64(time.Millisecond), nil
 		case TimerMin:
-			return float64(timer.Min()), nil
+			return float64(timer.Min()) / float64(time.Millisecond), nil
 		case TimerPercentile:
-			return float64(timer.Percentile(percentile)), nil
+			return float64(timer.Percentile(percentile)) / float64(time.Millisecond), nil
 		case TimerRate1:
-			return float64(timer.Percentile(percentile)), nil
+			return float64(timer.Rate1()), nil
 		case TimerRate5:
-			return float64(timer.Percentile(percentile)), nil
+			return float64(timer.Rate5()), nil
 		case TimerRate15:
-			return float64(timer.Percentile(percentile)), nil
+			return float64(timer.Rate15()), nil
 		case TimerRateMean:
-			return float64(timer.Percentile(percentile)), nil
+			return float64(timer.RateMean()), nil
 		case TimerStdDev:
 			return float64(timer.StdDev()), nil
 		case TimerSum:

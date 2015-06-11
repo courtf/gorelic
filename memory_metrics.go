@@ -33,5 +33,5 @@ func addMemoryMericsToComponent(component newrelic_platform_go.IComponent, ds Me
 	component.AddMetrica(NewGaugeDeltaMetrica(ds, "runtime.MemStats.StackSys", curPath, "Stack", units))
 	component.AddMetrica(NewGaugeDeltaMetrica(ds, "runtime.MemStats.MSpanSys", curPath, "Mspan", units))
 	component.AddMetrica(NewGaugeDeltaMetrica(ds, "runtime.MemStats.MCacheSys", curPath, "MCache", units))
-	component.AddMetrica(NewGaugeDeltaMetrica(ds, "runtime.MemStats.BuckCacheSys", curPath, "BuckCache", units))
+	component.AddMetrica(NewGaugeDeltaMetrica(ds, "runtime.MemStats.BuckHashSys", curPath, "BuckHash", units))
 }
