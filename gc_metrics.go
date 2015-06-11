@@ -7,7 +7,7 @@ import (
 	"github.com/courtf/newrelic_platform_go"
 )
 
-func addGCMericsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource, pollInterval int) {
+func addGCMericsToComponent(component newrelic_platform_go.IComponent, ds DataSource, pollInterval int) {
 	metrics.RegisterDebugGCStats(ds)
 	go metrics.CaptureDebugGCStats(ds, time.Duration(pollInterval)*time.Second)
 

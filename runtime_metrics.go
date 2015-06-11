@@ -53,38 +53,38 @@ func (metrica *noCgoCallsMetrica) ClearSentData() {
 }
 
 //OS specific metrics data source interface
-type iSystemMetricaDataSource interface {
+type iSystemDataSource interface {
 	GetValue(key string) (float64, error)
 }
 
-// iSystemMetricaDataSource fabrica
-func newSystemMetricaDataSource() iSystemMetricaDataSource {
-	var ds iSystemMetricaDataSource
+// iSystemDataSource fabrica
+func newSystemDataSource() iSystemDataSource {
+	var ds iSystemDataSource
 	switch runtime.GOOS {
 	default:
-		ds = &systemMetricaDataSource{}
+		ds = &systemDataSource{}
 	case "linux":
-		ds = &linuxSystemMetricaDataSource{
+		ds = &linuxSystemDataSource{
 			systemData: make(map[string]string),
 		}
 	}
 	return ds
 }
 
-//Default implementation of iSystemMetricaDataSource. Just return an error
-type systemMetricaDataSource struct{}
+//Default implementation of iSystemDataSource. Just return an error
+type systemDataSource struct{}
 
-func (ds *systemMetricaDataSource) GetValue(key string) (float64, error) {
+func (ds *systemDataSource) GetValue(key string) (float64, error) {
 	return 0, fmt.Errorf("this metrica was not implemented yet for %s", runtime.GOOS)
 }
 
-// Linux OS implementation of ISystemMetricaDataSource
-type linuxSystemMetricaDataSource struct {
+// Linux OS implementation of ISystemDataSource
+type linuxSystemDataSource struct {
 	lastUpdate time.Time
 	systemData map[string]string
 }
 
-func (ds *linuxSystemMetricaDataSource) GetValue(key string) (float64, error) {
+func (ds *linuxSystemDataSource) GetValue(key string) (float64, error) {
 	if err := ds.checkAndUpdateData(); err != nil {
 		return 0, err
 	} else if val, ok := ds.systemData[key]; !ok {
@@ -113,7 +113,7 @@ func (ds *linuxSystemMetricaDataSource) GetValue(key string) (float64, error) {
 		return valConverted, nil
 	}
 }
-func (ds *linuxSystemMetricaDataSource) checkAndUpdateData() error {
+func (ds *linuxSystemDataSource) checkAndUpdateData() error {
 	startTime := time.Now()
 	if startTime.Sub(ds.lastUpdate) > time.Second*linuxSystemQueryInterval {
 		path := fmt.Sprintf("/proc/%d/status", os.Getpid())
@@ -142,7 +142,7 @@ type systemMetrica struct {
 	sourceKey    string
 	newrelicName string
 	units        string
-	dataSource   iSystemMetricaDataSource
+	dataSource   iSystemDataSource
 }
 
 func (metrica *systemMetrica) GetName() string {
@@ -162,7 +162,7 @@ func addRuntimeMetricsToComponent(component newrelic_platform_go.IComponent) {
 	component.AddMetrica(&noGoroutinesMetrica{})
 	component.AddMetrica(&noCgoCallsMetrica{})
 
-	ds := newSystemMetricaDataSource()
+	ds := newSystemDataSource()
 	metrics := []*systemMetrica{
 		&systemMetrica{
 			sourceKey:    "Threads",

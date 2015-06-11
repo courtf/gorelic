@@ -7,7 +7,7 @@ import (
 	"github.com/courtf/newrelic_platform_go"
 )
 
-func addMemoryMericsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource, pollInterval int) {
+func addMemoryMericsToComponent(component newrelic_platform_go.IComponent, ds DataSource, pollInterval int) {
 	metrics.RegisterRuntimeMemStats(ds)
 	metrics.CaptureRuntimeMemStatsOnce(ds)
 	go metrics.CaptureRuntimeMemStats(ds, time.Duration(pollInterval)*time.Second)

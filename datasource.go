@@ -38,7 +38,7 @@ const (
 	NoTimerFuncs
 )
 
-type MetricaDataSource interface {
+type DataSource interface {
 	metrics.Registry
 	GetCounterValue(key string) (float64, error)
 	GetGaugeValue(key string) (float64, error)
@@ -51,15 +51,15 @@ type MetricaDataSource interface {
 	TimerFuncForKey(key string, f func())
 }
 
-type metricaDataSource struct {
+type dataSource struct {
 	metrics.Registry
 }
 
-func NewMetricaDataSource(r metrics.Registry) MetricaDataSource {
-	return metricaDataSource{r}
+func NewDataSource(r metrics.Registry) DataSource {
+	return dataSource{r}
 }
 
-func (ds metricaDataSource) GetCounterValue(key string) (float64, error) {
+func (ds dataSource) GetCounterValue(key string) (float64, error) {
 	if valueContainer := ds.Get(key); valueContainer == nil {
 		return 0, fmt.Errorf("metrica with name %s is not registered\n", key)
 	} else if counter, ok := valueContainer.(metrics.Counter); ok {
@@ -69,7 +69,7 @@ func (ds metricaDataSource) GetCounterValue(key string) (float64, error) {
 	}
 }
 
-func (ds metricaDataSource) GetGaugeValue(key string) (float64, error) {
+func (ds dataSource) GetGaugeValue(key string) (float64, error) {
 	if valueContainer := ds.Get(key); valueContainer == nil {
 		return 0, fmt.Errorf("metrica with name %s is not registered\n", key)
 	} else if gauge, ok := valueContainer.(metrics.Gauge); ok {
@@ -79,7 +79,7 @@ func (ds metricaDataSource) GetGaugeValue(key string) (float64, error) {
 	}
 }
 
-func (ds metricaDataSource) GetHistogramValue(key string, hf HistogramFunc, percentile float64) (float64, error) {
+func (ds dataSource) GetHistogramValue(key string, hf HistogramFunc, percentile float64) (float64, error) {
 	if valueContainer := ds.Get(key); valueContainer == nil {
 		return 0, fmt.Errorf("metrica with name %s is not registered\n", key)
 	} else if histogram, ok := valueContainer.(metrics.Histogram); ok {
@@ -108,7 +108,7 @@ func (ds metricaDataSource) GetHistogramValue(key string, hf HistogramFunc, perc
 	}
 }
 
-func (ds metricaDataSource) GetTimerValue(key string, tf TimerFunc, percentile float64) (float64, error) {
+func (ds dataSource) GetTimerValue(key string, tf TimerFunc, percentile float64) (float64, error) {
 	if valueContainer := ds.Get(key); valueContainer == nil {
 		return 0, fmt.Errorf("metrica with name %s is not registered\n", key)
 	} else if timer, ok := valueContainer.(metrics.Timer); ok {
@@ -145,7 +145,7 @@ func (ds metricaDataSource) GetTimerValue(key string, tf TimerFunc, percentile f
 	}
 }
 
-func (ds metricaDataSource) counterForKey(key string) (counter metrics.Counter) {
+func (ds dataSource) counterForKey(key string) (counter metrics.Counter) {
 	var container interface{}
 	if container = ds.Get(key); container == nil {
 		return
@@ -155,7 +155,7 @@ func (ds metricaDataSource) counterForKey(key string) (counter metrics.Counter) 
 	return
 }
 
-func (ds metricaDataSource) histogramForKey(key string) (histogram metrics.Histogram) {
+func (ds dataSource) histogramForKey(key string) (histogram metrics.Histogram) {
 	var container interface{}
 	if container = ds.Get(key); container == nil {
 		return
@@ -165,7 +165,7 @@ func (ds metricaDataSource) histogramForKey(key string) (histogram metrics.Histo
 	return
 }
 
-func (ds metricaDataSource) timerForKey(key string) (timer metrics.Timer) {
+func (ds dataSource) timerForKey(key string) (timer metrics.Timer) {
 	var container interface{}
 	if container = ds.Get(key); container == nil {
 		return
@@ -175,31 +175,31 @@ func (ds metricaDataSource) timerForKey(key string) (timer metrics.Timer) {
 	return
 }
 
-func (ds metricaDataSource) IncCounterForKey(key string, i int64) {
+func (ds dataSource) IncCounterForKey(key string, i int64) {
 	if counter := ds.counterForKey(key); counter != nil {
 		counter.Inc(i)
 	}
 }
 
-func (ds metricaDataSource) UpdateHistogramForKey(key string, i int64) {
+func (ds dataSource) UpdateHistogramForKey(key string, i int64) {
 	if histogram := ds.histogramForKey(key); histogram != nil {
 		histogram.Update(i)
 	}
 }
 
-func (ds metricaDataSource) UpdateTimerForKey(key string, d time.Duration) {
+func (ds dataSource) UpdateTimerForKey(key string, d time.Duration) {
 	if timer := ds.timerForKey(key); timer != nil {
 		timer.Update(d)
 	}
 }
 
-func (ds metricaDataSource) UpdateTimerSinceForKey(key string, t time.Time) {
+func (ds dataSource) UpdateTimerSinceForKey(key string, t time.Time) {
 	if timer := ds.timerForKey(key); timer != nil {
 		timer.UpdateSince(t)
 	}
 }
 
-func (ds metricaDataSource) TimerFuncForKey(key string, f func()) {
+func (ds dataSource) TimerFuncForKey(key string, f func()) {
 	if timer := ds.timerForKey(key); timer != nil {
 		timer.Time(f)
 	}

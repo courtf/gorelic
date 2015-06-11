@@ -12,10 +12,10 @@ import (
 type Tracer struct {
 	metrics   map[string]*TraceTransaction
 	component newrelic_platform_go.IComponent
-	ds        MetricaDataSource
+	ds        DataSource
 }
 
-func newTracer(component newrelic_platform_go.IComponent, ds MetricaDataSource) *Tracer {
+func newTracer(component newrelic_platform_go.IComponent, ds DataSource) *Tracer {
 	return &Tracer{make(map[string]*TraceTransaction), component, ds}
 }
 
@@ -55,6 +55,6 @@ type TraceTransaction struct {
 	dataSourceKey, basePath string
 }
 
-func (transaction *TraceTransaction) addMetricsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource) {
+func (transaction *TraceTransaction) addMetricsToComponent(component newrelic_platform_go.IComponent, ds DataSource) {
 	addTimerHistogramMetrics(component, ds, transaction.dataSourceKey, transaction.basePath)
 }

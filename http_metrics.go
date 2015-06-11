@@ -44,12 +44,12 @@ func (handler *tHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 	}
 }
 
-func addHTTPMericsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource, timerKey string) {
+func addHTTPMericsToComponent(component newrelic_platform_go.IComponent, ds DataSource, timerKey string) {
 	addTimerMeterMetrics(component, ds, timerKey, "HTTP/Throughput/", "rps")
 	addTimerHistogramMetrics(component, ds, timerKey, "HTTP/Throughput/")
 }
 
-func addHTTPStatusMetricsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource, statuses []int,
+func addHTTPStatusMetricsToComponent(component newrelic_platform_go.IComponent, ds DataSource, statuses []int,
 	keyFunc func(int) string) {
 	for _, s := range statuses {
 		component.AddMetrica(NewCounterMetrica(ds, keyFunc(s), "HTTP/Status/", fmt.Sprintf("%d", s), "count"))

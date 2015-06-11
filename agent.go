@@ -64,7 +64,7 @@ type Agent struct {
 	Client http.Client
 
 	// data source for internal use
-	dataSource MetricaDataSource
+	dataSource DataSource
 }
 
 // NewAgent builds new Agent objects.
@@ -81,7 +81,7 @@ func NewAgent() *Agent {
 		AgentVersion:                CurrentAgentVersion,
 		Tracer:                      nil,
 		CustomMetrics:               make([]newrelic_platform_go.IMetrica, 0),
-		dataSource:                  NewMetricaDataSource(metrics.NewRegistry()),
+		dataSource:                  NewDataSource(metrics.NewRegistry()),
 	}
 	return agent
 }
@@ -113,7 +113,7 @@ func newProxyWrapper(agent *Agent, proxy *tHTTPHandler) proxyWrapper {
 				statusRecorder{
 					w,
 					func(status int) {
-						agent.dataSource.IncCounterForKey(statusKeyFunc(status), 1)
+						go agent.dataSource.IncCounterForKey(statusKeyFunc(status), 1)
 						w.WriteHeader(status)
 					},
 				},
@@ -121,7 +121,6 @@ func newProxyWrapper(agent *Agent, proxy *tHTTPHandler) proxyWrapper {
 			)
 		},
 	}
-
 }
 
 //WrapHTTPHandlerFunc  instrument HTTP handler functions to collect HTTP metrics

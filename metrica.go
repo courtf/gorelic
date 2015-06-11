@@ -7,7 +7,7 @@ import (
 )
 
 type baseMetrica struct {
-	dataSource    MetricaDataSource
+	dataSource    DataSource
 	dataSourceKey string
 	basePath      string
 	name          string
@@ -30,7 +30,7 @@ type CounterMetrica struct {
 	baseMetrica
 }
 
-func NewCounterMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units string) CounterMetrica {
+func NewCounterMetrica(ds DataSource, dataSourceKey, basePath, name, units string) CounterMetrica {
 	return CounterMetrica{
 		baseMetrica{
 			ds, dataSourceKey, basePath, name, units,
@@ -61,7 +61,7 @@ type GaugeMetrica struct {
 	baseMetrica
 }
 
-func NewGaugeMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units string) GaugeMetrica {
+func NewGaugeMetrica(ds DataSource, dataSourceKey, basePath, name, units string) GaugeMetrica {
 	return GaugeMetrica{
 		baseMetrica{
 			ds, dataSourceKey, basePath, name, units,
@@ -78,7 +78,7 @@ type GaugeDeltaMetrica struct {
 	previousValue float64
 }
 
-func NewGaugeDeltaMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units string) *GaugeDeltaMetrica {
+func NewGaugeDeltaMetrica(ds DataSource, dataSourceKey, basePath, name, units string) *GaugeDeltaMetrica {
 	return &GaugeDeltaMetrica{
 		baseMetrica: baseMetrica{
 			ds, dataSourceKey, basePath, name, units,
@@ -103,7 +103,7 @@ type HistogramMetrica struct {
 	percentile float64
 }
 
-func NewHistogramMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units string,
+func NewHistogramMetrica(ds DataSource, dataSourceKey, basePath, name, units string,
 	hf HistogramFunc) HistogramMetrica {
 	return HistogramMetrica{
 		baseMetrica: baseMetrica{
@@ -113,7 +113,7 @@ func NewHistogramMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, un
 	}
 }
 
-func NewPercentileHistogramMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units string,
+func NewPercentileHistogramMetrica(ds DataSource, dataSourceKey, basePath, name, units string,
 	percentile float64) HistogramMetrica {
 	return HistogramMetrica{
 		baseMetrica: baseMetrica{
@@ -134,7 +134,7 @@ type TimerMetrica struct {
 	percentile float64
 }
 
-func NewTimerMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units string, tf TimerFunc) TimerMetrica {
+func NewTimerMetrica(ds DataSource, dataSourceKey, basePath, name, units string, tf TimerFunc) TimerMetrica {
 	return TimerMetrica{
 		baseMetrica: baseMetrica{
 			ds, dataSourceKey, basePath, name, units,
@@ -143,7 +143,7 @@ func NewTimerMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units 
 	}
 }
 
-func NewPercentileTimerMetrica(ds MetricaDataSource, dataSourceKey, basePath, name, units string,
+func NewPercentileTimerMetrica(ds DataSource, dataSourceKey, basePath, name, units string,
 	percentile float64) TimerMetrica {
 	return TimerMetrica{
 		baseMetrica: baseMetrica{
