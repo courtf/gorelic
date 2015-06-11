@@ -1,6 +1,8 @@
 package gorelic
 
 import (
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/courtf/go-metrics"
@@ -10,10 +12,11 @@ import (
 type Tracer struct {
 	metrics   map[string]*TraceTransaction
 	component newrelic_platform_go.IComponent
+	ds        MetricaDataSource
 }
 
-func newTracer(component newrelic_platform_go.IComponent) *Tracer {
-	return &Tracer{make(map[string]*TraceTransaction), component}
+func newTracer(component newrelic_platform_go.IComponent, ds MetricaDataSource) *Tracer {
+	return &Tracer{make(map[string]*TraceTransaction), component, ds}
 }
 
 func (t *Tracer) Trace(name string, traceFunc func()) {
@@ -23,12 +26,17 @@ func (t *Tracer) Trace(name string, traceFunc func()) {
 }
 
 func (t *Tracer) BeginTrace(name string) *Trace {
-	tracerName := "Trace/" + name
-	m := t.metrics[tracerName]
+	name = strings.Trim(name, "/")
+	basePath := filepath.Join("Trace", name)
+
+	m := t.metrics[basePath]
 	if m == nil {
-		t.metrics[tracerName] = &TraceTransaction{tracerName, metrics.NewTimer()}
-		m = t.metrics[tracerName]
-		m.addMetricsToComponent(t.component)
+		srcKey := "gorelic.trace." + name
+		timer := metrics.NewTimer()
+		t.ds.Register(srcKey, timer)
+		m = &TraceTransaction{timer, srcKey, basePath}
+		t.metrics[basePath] = m
+		m.addMetricsToComponent(t.component, t.ds)
 	}
 	return &Trace{m, time.Now()}
 }
@@ -43,10 +51,10 @@ func (t *Trace) EndTrace() {
 }
 
 type TraceTransaction struct {
-	name  string
-	timer metrics.Timer
+	timer                   metrics.Timer
+	dataSourceKey, basePath string
 }
 
-func (transaction *TraceTransaction) addMetricsToComponent(component newrelic_platform_go.IComponent) {
-	addTimedHistogramMetrics(component, transaction.timer, transaction.name)
+func (transaction *TraceTransaction) addMetricsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource) {
+	addTimerHistogramMetrics(component, ds, transaction.dataSourceKey, transaction.basePath)
 }

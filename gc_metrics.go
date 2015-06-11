@@ -7,60 +7,19 @@ import (
 	"github.com/courtf/newrelic_platform_go"
 )
 
-func newGCMetricaDataSource(pollInterval int) goMetricaDataSource {
-	r := metrics.NewRegistry()
+func addGCMericsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource, pollInterval int) {
+	metrics.RegisterDebugGCStats(ds)
+	go metrics.CaptureDebugGCStats(ds, time.Duration(pollInterval)*time.Second)
 
-	metrics.RegisterDebugGCStats(r)
-	go metrics.CaptureDebugGCStats(r, time.Duration(pollInterval)*time.Second)
-	return goMetricaDataSource{r}
-}
+	basePath := "Runtime/GC/"
+	component.AddMetrica(NewGaugeMetrica(ds, "debug.GCStats.NumGC", basePath, "NumberOfGCCalls", "calls"))
+	component.AddMetrica(NewGaugeMetrica(ds, "debug.GCStats.PauseTotal", basePath, "PauseTotalTime", "nanos"))
 
-func addGCMericsToComponent(component newrelic_platform_go.IComponent, pollInterval int) {
-	metrics := []*baseGoMetrica{
-		&baseGoMetrica{
-			name:          "NumberOfGCCalls",
-			units:         "calls",
-			dataSourceKey: "debug.GCStats.NumGC",
-		},
-		&baseGoMetrica{
-			name:          "PauseTotalTime",
-			units:         "nanoseconds",
-			dataSourceKey: "debug.GCStats.PauseTotal",
-		},
-	}
-
-	ds := newGCMetricaDataSource(pollInterval)
-	for _, m := range metrics {
-		m.basePath = "Runtime/GC/"
-		m.dataSource = ds
-		component.AddMetrica(&gaugeMetrica{m})
-	}
-
-	histogramMetrics := []*histogramMetrica{
-		&histogramMetrica{
-			statFunction:  histogramMax,
-			baseGoMetrica: &baseGoMetrica{name: "Max"},
-		},
-		&histogramMetrica{
-			statFunction:  histogramMin,
-			baseGoMetrica: &baseGoMetrica{name: "Min"},
-		},
-		&histogramMetrica{
-			statFunction:  histogramMean,
-			baseGoMetrica: &baseGoMetrica{name: "Mean"},
-		},
-		&histogramMetrica{
-			statFunction:    histogramPercentile,
-			percentileValue: 0.95,
-			baseGoMetrica:   &baseGoMetrica{name: "Percentile95"},
-		},
-	}
-	for _, m := range histogramMetrics {
-		m.baseGoMetrica.units = "nanoseconds"
-		m.baseGoMetrica.dataSourceKey = "debug.GCStats.Pause"
-		m.baseGoMetrica.basePath = "Runtime/GC/GCTime/"
-		m.baseGoMetrica.dataSource = ds
-
-		component.AddMetrica(m)
-	}
+	basePath += "GCTime/"
+	hkey := "debug.GCStats.Pause"
+	units := "nanos"
+	component.AddMetrica(NewHistogramMetrica(ds, hkey, basePath, "Max", units, HistogramMax))
+	component.AddMetrica(NewHistogramMetrica(ds, hkey, basePath, "Mean", units, HistogramMean))
+	component.AddMetrica(NewHistogramMetrica(ds, hkey, basePath, "Min", units, HistogramMin))
+	component.AddMetrica(NewPercentileHistogramMetrica(ds, hkey, basePath, "Percentile95", units, 0.95))
 }

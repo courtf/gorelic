@@ -34,6 +34,9 @@ const (
 
 	//DefaultAgentName in NewRelic GUI. You can change it.
 	DefaultAgentName = "Go Plugin"
+
+	httpThroughPutDataSourceKey = "gorelic.http.throughput"
+	httpStatusDataSourceKey     = "gorelic.http.status." // add code to the end
 )
 
 //Agent - is NewRelic agent implementation.
@@ -53,13 +56,15 @@ type Agent struct {
 	AgentVersion                string
 	plugin                      *newrelic_platform_go.NewrelicPlugin
 	HTTPTimer                   metrics.Timer
-	HTTPStatusCounters          map[int]metrics.Counter
 	Tracer                      *Tracer
 	CustomMetrics               []newrelic_platform_go.IMetrica
 
 	// All HTTP requests will be done using this client. Change it if you need
 	// to use a proxy.
 	Client http.Client
+
+	// data source for internal use
+	dataSource MetricaDataSource
 }
 
 // NewAgent builds new Agent objects.
@@ -76,14 +81,9 @@ func NewAgent() *Agent {
 		AgentVersion:                CurrentAgentVersion,
 		Tracer:                      nil,
 		CustomMetrics:               make([]newrelic_platform_go.IMetrica, 0),
+		dataSource:                  NewMetricaDataSource(metrics.NewRegistry()),
 	}
 	return agent
-}
-
-// our custom component
-type resettableComponent struct {
-	newrelic_platform_go.IComponent
-	counters map[int]metrics.Counter
 }
 
 // used by proxyWrapper below to record http statuses
@@ -113,9 +113,7 @@ func newProxyWrapper(agent *Agent, proxy *tHTTPHandler) proxyWrapper {
 				statusRecorder{
 					w,
 					func(status int) {
-						if counter, ok := agent.HTTPStatusCounters[status]; ok {
-							counter.Inc(1)
-						}
+						agent.dataSource.IncCounterForKey(statusKeyFunc(status), 1)
 						w.WriteHeader(status)
 					},
 				},
@@ -124,14 +122,6 @@ func newProxyWrapper(agent *Agent, proxy *tHTTPHandler) proxyWrapper {
 		},
 	}
 
-}
-
-// newrelic_platform_go.IComponent interface implementation
-func (c resettableComponent) ClearSentData() {
-	c.IComponent.ClearSentData()
-	for _, counter := range c.counters {
-		counter.Clear()
-	}
 }
 
 //WrapHTTPHandlerFunc  instrument HTTP handler functions to collect HTTP metrics
@@ -182,23 +172,23 @@ func (agent *Agent) Run() error {
 	component = newrelic_platform_go.NewPluginComponent(agent.NewrelicName, agent.AgentGUID)
 
 	// Add default metrics and tracer.
-	addRuntimeMericsToComponent(component)
-	agent.Tracer = newTracer(component)
+	addRuntimeMetricsToComponent(component)
+	agent.Tracer = newTracer(component, agent.dataSource)
 
 	// Check agent flags and add relevant metrics.
 	if agent.CollectGcStat {
-		addGCMericsToComponent(component, agent.GCPollInterval)
+		addGCMericsToComponent(component, agent.dataSource, agent.GCPollInterval)
 		agent.debug(fmt.Sprintf("Init GC metrics collection. Poll interval %d seconds.", agent.GCPollInterval))
 	}
 
 	if agent.CollectMemoryStat {
-		addMemoryMericsToComponent(component, agent.MemoryAllocatorPollInterval)
+		addMemoryMericsToComponent(component, agent.dataSource, agent.MemoryAllocatorPollInterval)
 		agent.debug(fmt.Sprintf("Init memory allocator metrics collection. Poll interval %d seconds.", agent.MemoryAllocatorPollInterval))
 	}
 
 	if agent.CollectHTTPStat {
 		agent.initTimer()
-		addHTTPMericsToComponent(component, agent.HTTPTimer)
+		addHTTPMericsToComponent(component, agent.dataSource, httpThroughPutDataSourceKey)
 		agent.debug(fmt.Sprintf("Init HTTP metrics collection."))
 	}
 
@@ -208,9 +198,9 @@ func (agent *Agent) Run() error {
 	}
 
 	if agent.CollectHTTPStatuses {
-		agent.initStatusCounters()
-		component = &resettableComponent{component, agent.HTTPStatusCounters}
-		addHTTPStatusMetricsToComponent(component, agent.HTTPStatusCounters)
+		statuses := getHTTPStatuses()
+		agent.initStatusCounters(statuses)
+		addHTTPStatusMetricsToComponent(component, agent.dataSource, statuses, statusKeyFunc)
 		agent.debug(fmt.Sprintf("Init HTTP status metrics collection."))
 	}
 
@@ -230,12 +220,19 @@ func (agent *Agent) Run() error {
 func (agent *Agent) initTimer() {
 	if agent.HTTPTimer == nil {
 		agent.HTTPTimer = metrics.NewTimer()
+		agent.dataSource.Register(httpThroughPutDataSourceKey, agent.HTTPTimer)
 	}
 }
 
 //Initialize metrics.Counters objects, used to collect HTTP statuses
-func (agent *Agent) initStatusCounters() {
-	httpStatuses := []int{
+func (agent *Agent) initStatusCounters(statuses []int) {
+	for _, statusCode := range statuses {
+		agent.dataSource.Register(statusKeyFunc(statusCode), metrics.NewCounter)
+	}
+}
+
+func getHTTPStatuses() []int {
+	return []int{
 		http.StatusContinue, http.StatusSwitchingProtocols,
 
 		http.StatusOK, http.StatusCreated, http.StatusAccepted, http.StatusNonAuthoritativeInfo,
@@ -253,11 +250,10 @@ func (agent *Agent) initStatusCounters() {
 		http.StatusInternalServerError, http.StatusNotImplemented, http.StatusBadGateway,
 		http.StatusServiceUnavailable, http.StatusGatewayTimeout, http.StatusHTTPVersionNotSupported,
 	}
+}
 
-	agent.HTTPStatusCounters = make(map[int]metrics.Counter, len(httpStatuses))
-	for _, statusCode := range httpStatuses {
-		agent.HTTPStatusCounters[statusCode] = metrics.NewCounter()
-	}
+func statusKeyFunc(status int) string {
+	return httpStatusDataSourceKey + fmt.Sprintf("%d", status)
 }
 
 //Print debug messages

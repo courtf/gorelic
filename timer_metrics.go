@@ -1,131 +1,50 @@
 package gorelic
 
-import (
-	"path/filepath"
-	"time"
+import "github.com/courtf/newrelic_platform_go"
 
-	"github.com/courtf/go-metrics"
-	"github.com/courtf/newrelic_platform_go"
-)
-
-type baseTimerMetrica struct {
-	dataSource metrics.Timer
-	name       string
-	units      string
-}
-
-func (metrica *baseTimerMetrica) GetName() string {
-	return metrica.name
-}
-
-func (metrica *baseTimerMetrica) GetUnits() string {
-	return metrica.units
-}
-
-func addMeterMetrics(component newrelic_platform_go.IComponent, timer metrics.Timer, name, units string) {
-	for _, m := range GetMeterMetrica(timer, name, units) {
+func addTimerMeterMetrics(component newrelic_platform_go.IComponent, ds MetricaDataSource, dataSourceKey, basePath, units string) {
+	for _, m := range GetTimerMeterMetrica(ds, dataSourceKey, basePath, units) {
 		component.AddMetrica(m)
 	}
 }
 
-func GetMeterMetrica(timer metrics.Timer, name, units string) []newrelic_platform_go.IMetrica {
+func GetTimerMeterMetrica(ds MetricaDataSource, dataSourceKey, basePath, units string) []newrelic_platform_go.IMetrica {
 	return []newrelic_platform_go.IMetrica{
-		&TimerRate1Metrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "1minute"),
-				units:      units,
-				dataSource: timer,
-			},
-		},
-
-		&TimerRate5Metrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "5minute"),
-				units:      units,
-				dataSource: timer,
-			},
-		},
-
-		&TimerRate15Metrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "15minute"),
-				units:      units,
-				dataSource: timer,
-			},
-		},
-
-		&TimerRateMeanMetrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "rateMean"),
-				units:      units,
-				dataSource: timer,
-			},
-		},
+		NewTimerMetrica(ds, dataSourceKey, basePath, "Rate1", units, TimerRate1),
+		NewTimerMetrica(ds, dataSourceKey, basePath, "Rate5", units, TimerRate5),
+		NewTimerMetrica(ds, dataSourceKey, basePath, "Rate15", units, TimerRate15),
+		NewTimerMetrica(ds, dataSourceKey, basePath, "RateMean", units, TimerRateMean),
 	}
 }
 
-func addTimedHistogramMetrics(component newrelic_platform_go.IComponent, timer metrics.Timer, name string) {
-	for _, m := range GetTimedHistogramMetrica(timer, name) {
+func addTimerHistogramMetrics(component newrelic_platform_go.IComponent, ds MetricaDataSource, dataSourceKey, basePath string) {
+	for _, m := range GetTimerHistogramMetrica(ds, dataSourceKey, basePath) {
 		component.AddMetrica(m)
 	}
 }
 
-func GetTimedHistogramMetrica(timer metrics.Timer, name string) []newrelic_platform_go.IMetrica {
+func GetTimerHistogramMetrica(ds MetricaDataSource, dataSourceKey, basePath string) []newrelic_platform_go.IMetrica {
 	return []newrelic_platform_go.IMetrica{
-		&TimerMeanMetrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "mean"),
-				units:      "ms",
-				dataSource: timer,
-			},
-		},
-
-		&TimerMaxMetrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "max"),
-				units:      "ms",
-				dataSource: timer,
-			},
-		},
-
-		&TimerMinMetrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "min"),
-				units:      "ms",
-				dataSource: timer,
-			},
-		},
-
-		&TimerPercentile75Metrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "percentile75"),
-				units:      "ms",
-				dataSource: timer,
-			},
-		},
-
-		&TimerPercentile90Metrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "percentile90"),
-				units:      "ms",
-				dataSource: timer,
-			},
-		},
-
-		&TimerPercentile95Metrica{
-			baseTimerMetrica: &baseTimerMetrica{
-				name:       filepath.Join(name, "percentile95"),
-				units:      "ms",
-				dataSource: timer,
-			},
-		},
+		NewTimerMetrica(ds, dataSourceKey, basePath, "Max", "ms", TimerMax),
+		NewTimerMetrica(ds, dataSourceKey, basePath, "Mean", "ms", TimerMean),
+		NewTimerMetrica(ds, dataSourceKey, basePath, "Min", "ms", TimerMin),
+		NewPercentileTimerMetrica(ds, dataSourceKey, basePath, "Percentile95", "ms", 0.95),
 	}
 }
 
-func GetTimerMetrica(timer metrics.Timer, name, units string) []newrelic_platform_go.IMetrica {
-	mm := GetMeterMetrica(timer, name, units)
+func GetHistogramMetrica(ds MetricaDataSource, dataSourceKey, basePath, units string) []newrelic_platform_go.IMetrica {
+	return []newrelic_platform_go.IMetrica{
+		NewHistogramMetrica(ds, dataSourceKey, basePath, "Max", units, HistogramMax),
+		NewHistogramMetrica(ds, dataSourceKey, basePath, "Mean", units, HistogramMean),
+		NewHistogramMetrica(ds, dataSourceKey, basePath, "Min", units, HistogramMin),
+		NewPercentileHistogramMetrica(ds, dataSourceKey, basePath, "Percentile95", units, 0.95),
+	}
+}
+
+func GetTimerMetrica(ds MetricaDataSource, dataSourceKey, basePath, units string) []newrelic_platform_go.IMetrica {
+	mm := GetTimerMeterMetrica(ds, dataSourceKey, basePath, units)
 	mmLen := len(mm)
-	thm := GetTimedHistogramMetrica(timer, name)
+	thm := GetTimerHistogramMetrica(ds, dataSourceKey, basePath)
 	thmLen := len(thm)
 	total := mmLen + thmLen
 
@@ -140,84 +59,4 @@ func GetTimerMetrica(timer metrics.Timer, name, units string) []newrelic_platfor
 	}
 
 	return ret
-}
-
-type TimerRate1Metrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerRate1Metrica) GetValue() (float64, error) {
-	return metrica.dataSource.Rate1(), nil
-}
-
-type TimerRate5Metrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerRate5Metrica) GetValue() (float64, error) {
-	return metrica.dataSource.Rate5(), nil
-}
-
-type TimerRate15Metrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerRate15Metrica) GetValue() (float64, error) {
-	return metrica.dataSource.Rate15(), nil
-}
-
-type TimerRateMeanMetrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerRateMeanMetrica) GetValue() (float64, error) {
-	return metrica.dataSource.RateMean(), nil
-}
-
-type TimerMeanMetrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerMeanMetrica) GetValue() (float64, error) {
-	return metrica.dataSource.Mean() / float64(time.Millisecond), nil
-}
-
-type TimerMinMetrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerMinMetrica) GetValue() (float64, error) {
-	return float64(metrica.dataSource.Min()) / float64(time.Millisecond), nil
-}
-
-type TimerMaxMetrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerMaxMetrica) GetValue() (float64, error) {
-	return float64(metrica.dataSource.Max()) / float64(time.Millisecond), nil
-}
-
-type TimerPercentile75Metrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerPercentile75Metrica) GetValue() (float64, error) {
-	return metrica.dataSource.Percentile(0.75) / float64(time.Millisecond), nil
-}
-
-type TimerPercentile90Metrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerPercentile90Metrica) GetValue() (float64, error) {
-	return metrica.dataSource.Percentile(0.90) / float64(time.Millisecond), nil
-}
-
-type TimerPercentile95Metrica struct {
-	*baseTimerMetrica
-}
-
-func (metrica *TimerPercentile95Metrica) GetValue() (float64, error) {
-	return metrica.dataSource.Percentile(0.95) / float64(time.Millisecond), nil
 }

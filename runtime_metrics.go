@@ -26,6 +26,9 @@ func (metrica *noGoroutinesMetrica) GetUnits() string {
 func (metrica *noGoroutinesMetrica) GetValue() (float64, error) {
 	return float64(runtime.NumGoroutine()), nil
 }
+func (metrica *noGoroutinesMetrica) ClearSentData() {
+	// no-op
+}
 
 // Number of CGO calls metrica
 type noCgoCallsMetrica struct {
@@ -44,6 +47,9 @@ func (metrica *noCgoCallsMetrica) GetValue() (float64, error) {
 	metrica.lastValue = currentValue
 
 	return value, nil
+}
+func (metrica *noCgoCallsMetrica) ClearSentData() {
+	// no-op
 }
 
 //OS specific metrics data source interface
@@ -148,8 +154,11 @@ func (metrica *systemMetrica) GetUnits() string {
 func (metrica *systemMetrica) GetValue() (float64, error) {
 	return metrica.dataSource.GetValue(metrica.sourceKey)
 }
+func (metrica *systemMetrica) ClearSentData() {
+	// no-op
+}
 
-func addRuntimeMericsToComponent(component newrelic_platform_go.IComponent) {
+func addRuntimeMetricsToComponent(component newrelic_platform_go.IComponent) {
 	component.AddMetrica(&noGoroutinesMetrica{})
 	component.AddMetrica(&noCgoCallsMetrica{})
 

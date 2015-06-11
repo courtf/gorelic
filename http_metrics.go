@@ -1,6 +1,7 @@
 package gorelic
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -43,7 +44,14 @@ func (handler *tHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 	}
 }
 
-func addHTTPMericsToComponent(component newrelic_platform_go.IComponent, timer metrics.Timer) {
-	addMeterMetrics(component, timer, "http/throughput", "rps")
-	addTimedHistogramMetrics(component, timer, "http/throughput")
+func addHTTPMericsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource, timerKey string) {
+	addTimerMeterMetrics(component, ds, timerKey, "HTTP/Throughput/", "rps")
+	addTimerHistogramMetrics(component, ds, timerKey, "HTTP/Throughput/")
+}
+
+func addHTTPStatusMetricsToComponent(component newrelic_platform_go.IComponent, ds MetricaDataSource, statuses []int,
+	keyFunc func(int) string) {
+	for _, s := range statuses {
+		component.AddMetrica(NewCounterMetrica(ds, keyFunc(s), "HTTP/Status/", fmt.Sprintf("%d", s), "count"))
+	}
 }
