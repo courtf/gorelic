@@ -56,6 +56,7 @@ type DataSource interface {
 	GetTimerValue(key string, tf TimerFunc, percentile float64) (float64, error)
 	IncCounterForKey(key string, i int64)
 	UpdateHistogramForKey(key string, i int64)
+	MarkMeterForKey(key string, i int64)
 	UpdateTimerForKey(key string, d time.Duration)
 	UpdateTimerSinceForKey(key string, t time.Time)
 	TimerFuncForKey(key string, f func())
