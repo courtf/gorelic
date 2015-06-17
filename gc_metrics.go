@@ -12,7 +12,8 @@ func addGCMericsToComponent(component newrelic_platform_go.IComponent, ds DataSo
 	go metrics.CaptureDebugGCStats(ds, time.Duration(pollInterval)*time.Second)
 
 	basePath := "Runtime/GC/"
-	component.AddMetrica(NewGaugeMetrica(ds, "debug.GCStats.NumGC", basePath, "NumberOfGCCalls", "calls"))
+	component.AddMetrica(NewGaugeMetrica(ds, "debug.GCStats.GCSince", basePath, "Calls", "calls"))
+	component.AddMetrica(NewGaugeMetrica(ds, "debug.GCStats.NumGC", basePath, "TotalCalls", "calls"))
 	component.AddMetrica(NewGaugeMetrica(ds, "debug.GCStats.PauseTotal", basePath, "PauseTotalTime", "nanos"))
 
 	basePath += "GCTime/"

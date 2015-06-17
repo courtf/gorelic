@@ -23,7 +23,7 @@ func (metrica baseMetrica) GetUnits() string {
 }
 
 func (metrica baseMetrica) ClearSentData() {
-	// no-op
+	// implemented by children (or not)
 }
 
 type CounterMetrica struct {

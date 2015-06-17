@@ -16,7 +16,8 @@ func addMemoryMericsToComponent(component newrelic_platform_go.IComponent, ds Da
 	curPath := basePath + "InUse/"
 	units := "bytes"
 
-	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.Alloc", curPath, "Total", units))
+	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.TotalAlloc", curPath, "TotalAlloc", units))
+	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.Alloc", curPath, "Alloc", units))
 	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.HeapAlloc", curPath, "Heap", units))
 	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.StackInuse", curPath, "Stack", units))
 	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.MSpanInuse", curPath, "MSpanInuse", units))
