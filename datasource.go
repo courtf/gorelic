@@ -8,6 +8,7 @@ import (
 )
 
 type HistogramFunc uint8
+type MeterFunc uint8
 type TimerFunc uint8
 
 const (
@@ -20,6 +21,14 @@ const (
 	HistogramSum
 	HistogramVariance
 	NoHistogramFuncs
+)
+
+const (
+	MeterCount MeterFunc = iota
+	MeterRate1
+	MeterRate5
+	MeterRate15
+	MeterRateMean
 )
 
 const (
@@ -43,6 +52,7 @@ type DataSource interface {
 	GetCounterValue(key string) (float64, error)
 	GetGaugeValue(key string) (float64, error)
 	GetHistogramValue(key string, hf HistogramFunc, percentile float64) (float64, error)
+	GetMeterValue(key string, mf MeterFunc) (float64, error)
 	GetTimerValue(key string, tf TimerFunc, percentile float64) (float64, error)
 	IncCounterForKey(key string, i int64)
 	UpdateHistogramForKey(key string, i int64)
@@ -108,6 +118,29 @@ func (ds dataSource) GetHistogramValue(key string, hf HistogramFunc, percentile 
 	}
 }
 
+func (ds dataSource) GetMeterValue(key string, mf MeterFunc) (float64, error) {
+	if valueContainer := ds.Get(key); valueContainer == nil {
+		return 0, fmt.Errorf("metrica with name %s is not registered\n", key)
+	} else if meter, ok := valueContainer.(metrics.Meter); ok {
+		switch mf {
+		default:
+			return 0, fmt.Errorf("unsupported stat function for meter: %s\n", mf)
+		case MeterCount:
+			return float64(meter.Count()), nil
+		case MeterRate1:
+			return float64(meter.Rate1()), nil
+		case MeterRate5:
+			return float64(meter.Rate5()), nil
+		case MeterRate15:
+			return float64(meter.Rate15()), nil
+		case MeterRateMean:
+			return float64(meter.RateMean()), nil
+		}
+	} else {
+		return 0, fmt.Errorf("metrica container has unexpected type: %T\n", valueContainer)
+	}
+}
+
 func (ds dataSource) GetTimerValue(key string, tf TimerFunc, percentile float64) (float64, error) {
 	if valueContainer := ds.Get(key); valueContainer == nil {
 		return 0, fmt.Errorf("metrica with name %s is not registered\n", key)
@@ -165,6 +198,16 @@ func (ds dataSource) histogramForKey(key string) (histogram metrics.Histogram) {
 	return
 }
 
+func (ds dataSource) meterForKey(key string) (meter metrics.Meter) {
+	var container interface{}
+	if container = ds.Get(key); container == nil {
+		return
+	}
+
+	meter, _ = container.(metrics.Meter)
+	return
+}
+
 func (ds dataSource) timerForKey(key string) (timer metrics.Timer) {
 	var container interface{}
 	if container = ds.Get(key); container == nil {
@@ -184,6 +227,12 @@ func (ds dataSource) IncCounterForKey(key string, i int64) {
 func (ds dataSource) UpdateHistogramForKey(key string, i int64) {
 	if histogram := ds.histogramForKey(key); histogram != nil {
 		histogram.Update(i)
+	}
+}
+
+func (ds dataSource) MarkMeterForKey(key string, i int64) {
+	if meter := ds.meterForKey(key); meter != nil {
+		meter.Mark(i)
 	}
 }
 

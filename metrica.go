@@ -128,6 +128,24 @@ func (metrica HistogramMetrica) GetValue() (float64, error) {
 	return metrica.dataSource.GetHistogramValue(metrica.dataSourceKey, metrica.histFunc, metrica.percentile)
 }
 
+type MeterMetrica struct {
+	baseMetrica
+	meterFunc MeterFunc
+}
+
+func NewMeterMetrica(ds DataSource, dataSourceKey, basePath, name, units string, mf MeterFunc) MeterMetrica {
+	return MeterMetrica{
+		baseMetrica{
+			ds, dataSourceKey, basePath, name, units,
+		},
+		mf,
+	}
+}
+
+func (metrica MeterMetrica) GetValue() (float64, error) {
+	return metrica.dataSource.GetMeterValue(metrica.dataSourceKey, metrica.meterFunc)
+}
+
 type TimerMetrica struct {
 	baseMetrica
 	timerFunc  TimerFunc
