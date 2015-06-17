@@ -3,6 +3,7 @@ package gorelic
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/courtf/go-metrics"
@@ -52,6 +53,6 @@ func addHTTPMericsToComponent(component newrelic_platform_go.IComponent, ds Data
 func addHTTPStatusMetricsToComponent(component newrelic_platform_go.IComponent, ds DataSource, statuses []int,
 	keyFunc func(int) string) {
 	for _, s := range statuses {
-		component.AddMetrica(NewCounterMetrica(ds, keyFunc(s), "HTTP/Status/", fmt.Sprintf("%d", s), "count"))
+		component.AddMetrica(NewCounterMetrica(ds, keyFunc(s), filepath.Join("HTTP/Status/", fmt.Sprintf("%d", s)), "count"))
 	}
 }

@@ -1,6 +1,10 @@
 package gorelic
 
-import "github.com/courtf/newrelic_platform_go"
+import (
+	"path/filepath"
+
+	"github.com/courtf/newrelic_platform_go"
+)
 
 func addTimerMeterMetrics(component newrelic_platform_go.IComponent, ds DataSource, dataSourceKey, basePath, units string) {
 	for _, m := range GetTimerMeterMetrica(ds, dataSourceKey, basePath, units) {
@@ -10,10 +14,10 @@ func addTimerMeterMetrics(component newrelic_platform_go.IComponent, ds DataSour
 
 func GetTimerMeterMetrica(ds DataSource, dataSourceKey, basePath, units string) []newrelic_platform_go.IMetrica {
 	return []newrelic_platform_go.IMetrica{
-		NewTimerMetrica(ds, dataSourceKey, basePath, "Rate1", units, TimerRate1),
-		NewTimerMetrica(ds, dataSourceKey, basePath, "Rate5", units, TimerRate5),
-		NewTimerMetrica(ds, dataSourceKey, basePath, "Rate15", units, TimerRate15),
-		NewTimerMetrica(ds, dataSourceKey, basePath, "RateMean", units, TimerRateMean),
+		NewTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "Rate1"), units, TimerRate1),
+		NewTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "Rate5"), units, TimerRate5),
+		NewTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "Rate15"), units, TimerRate15),
+		NewTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "RateMean"), units, TimerRateMean),
 	}
 }
 
@@ -25,10 +29,10 @@ func addTimerHistogramMetrics(component newrelic_platform_go.IComponent, ds Data
 
 func GetTimerHistogramMetrica(ds DataSource, dataSourceKey, basePath string) []newrelic_platform_go.IMetrica {
 	return []newrelic_platform_go.IMetrica{
-		NewTimerMetrica(ds, dataSourceKey, basePath, "Max", "ms", TimerMax),
-		NewTimerMetrica(ds, dataSourceKey, basePath, "Mean", "ms", TimerMean),
-		NewTimerMetrica(ds, dataSourceKey, basePath, "Min", "ms", TimerMin),
-		NewPercentileTimerMetrica(ds, dataSourceKey, basePath, "Percentile95", "ms", 0.95),
+		NewTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "Max"), "ms", TimerMax),
+		NewTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "Mean"), "ms", TimerMean),
+		NewTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "Min"), "ms", TimerMin),
+		NewPercentileTimerMetrica(ds, dataSourceKey, filepath.Join(basePath, "Percentile95"), "ms", 0.95),
 	}
 }
 
