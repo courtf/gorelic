@@ -54,6 +54,7 @@ type DataSource interface {
 	GetHistogramValue(key string, hf HistogramFunc, percentile float64) (float64, error)
 	GetMeterValue(key string, mf MeterFunc) (float64, error)
 	GetTimerValue(key string, tf TimerFunc, percentile float64) (float64, error)
+	UpdateGaugeForKey(key string, i int64)
 	IncCounterForKey(key string, i int64)
 	UpdateHistogramForKey(key string, i int64)
 	MarkMeterForKey(key string, i int64)
@@ -179,6 +180,16 @@ func (ds dataSource) GetTimerValue(key string, tf TimerFunc, percentile float64)
 	}
 }
 
+func (ds dataSource) gaugeForKey(key string) (gauge metrics.Gauge) {
+	var container interface{}
+	if container = ds.Get(key); container == nil {
+		return
+	}
+
+	gauge, _ = container.(metrics.Gauge)
+	return
+}
+
 func (ds dataSource) counterForKey(key string) (counter metrics.Counter) {
 	var container interface{}
 	if container = ds.Get(key); container == nil {
@@ -217,6 +228,12 @@ func (ds dataSource) timerForKey(key string) (timer metrics.Timer) {
 
 	timer, _ = container.(metrics.Timer)
 	return
+}
+
+func (ds dataSource) UpdateGaugeForKey(key string, i int64) {
+	if gauge := ds.gaugeForKey(key); gauge != nil {
+		gauge.Update(i)
+	}
 }
 
 func (ds dataSource) IncCounterForKey(key string, i int64) {
