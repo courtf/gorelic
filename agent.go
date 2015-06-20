@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
+	"sync/atomic"
 
 	"github.com/courtf/go-metrics"
 	"github.com/courtf/newrelic_platform_go"
@@ -58,6 +60,8 @@ type Agent struct {
 	HTTPTimer                   metrics.Timer
 	Tracer                      *Tracer
 	CustomMetrics               []newrelic_platform_go.IMetrica
+	cmLk                        sync.Mutex
+	running                     uint32
 
 	// All HTTP requests will be done using this client. Change it if you need
 	// to use a proxy.
@@ -155,7 +159,14 @@ func (agent *Agent) WrapHTTPHandler(h http.Handler) http.Handler {
 
 //AddCustomMetric adds metric to be collected periodically with NewrelicPollInterval interval
 func (agent *Agent) AddCustomMetric(metric newrelic_platform_go.IMetrica) {
+	agent.cmLk.Lock()
 	agent.CustomMetrics = append(agent.CustomMetrics, metric)
+	agent.cmLk.Unlock()
+
+	if atomic.LoadUint32(&agent.running) > 0 {
+		// the plugin is only modified in agent.Run, where a single component is added
+		agent.plugin.ComponentModels[0].AddMetrica(metric)
+	}
 }
 
 //Run initialize Agent instance and start harvest go routine
@@ -191,11 +202,6 @@ func (agent *Agent) Run() error {
 		agent.debug(fmt.Sprintf("Init HTTP metrics collection."))
 	}
 
-	for _, metric := range agent.CustomMetrics {
-		component.AddMetrica(metric)
-		agent.debug(fmt.Sprintf("Init %s metric collection.", metric.GetName()))
-	}
-
 	if agent.CollectHTTPStatuses {
 		statuses := getHTTPStatuses()
 		agent.initStatusCounters(statuses)
@@ -207,11 +213,20 @@ func (agent *Agent) Run() error {
 	agent.plugin = newrelic_platform_go.NewNewrelicPlugin(agent.AgentVersion, agent.NewrelicLicense, agent.NewrelicPollInterval)
 	agent.plugin.Verbose = agent.Verbose
 
+	agent.cmLk.Lock()
+	for _, metric := range agent.CustomMetrics {
+		component.AddMetrica(metric)
+		agent.debug(fmt.Sprintf("Init %s metric collection.", metric.GetName()))
+	}
+
 	// Add our metrics component to the plugin.
 	agent.plugin.AddComponent(component)
 
+	atomic.StoreUint32(&agent.running, 1)
+	agent.cmLk.Unlock()
+
 	// Start reporting!
-	go agent.plugin.Run()
+	agent.plugin.Run()
 	return nil
 }
 
