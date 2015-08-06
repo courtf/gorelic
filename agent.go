@@ -17,6 +17,10 @@ const (
 	// Recommended values is 60 seconds
 	DefaultNewRelicPollInterval = 60
 
+	// DefaultFatalThreshold - how many fatal http errors can occur when trying to reach new relic
+	// before the agent clears its data in an attempt to right the situation.
+	DefaultFatalThreshold = 10
+
 	// DefaultGcPollIntervalInSeconds - how often we will get garbage collector run statistic
 	// Default value is - every 10 seconds
 	// During GC stat pooling - mheap will be locked, so be carefull changing this value
@@ -47,6 +51,7 @@ type Agent struct {
 	NewrelicName                string
 	NewrelicLicense             string
 	NewrelicPollInterval        int
+	NewRelicFatalThreshold      int
 	Verbose                     bool
 	CollectGcStat               bool
 	CollectMemoryStat           bool
@@ -76,6 +81,7 @@ func NewAgent() *Agent {
 	agent := &Agent{
 		NewrelicName:                DefaultAgentName,
 		NewrelicPollInterval:        DefaultNewRelicPollInterval,
+		NewRelicFatalThreshold:      DefaultFatalThreshold,
 		Verbose:                     false,
 		CollectGcStat:               true,
 		CollectMemoryStat:           true,
@@ -175,7 +181,7 @@ func (agent *Agent) Run() error {
 		return errors.New("please, pass a valid newrelic license key")
 	}
 
-	agent.plugin = newrelic_platform_go.NewNewrelicPlugin(agent.AgentVersion, agent.NewrelicLicense, agent.NewrelicPollInterval)
+	agent.plugin = newrelic_platform_go.NewNewrelicPlugin(agent.AgentVersion, agent.NewrelicLicense, agent.NewrelicPollInterval, agent.NewRelicFatalThreshold)
 	agent.plugin.Client = agent.Client
 
 	var component newrelic_platform_go.IComponent
@@ -210,7 +216,7 @@ func (agent *Agent) Run() error {
 	}
 
 	// Init newrelic reporting plugin.
-	agent.plugin = newrelic_platform_go.NewNewrelicPlugin(agent.AgentVersion, agent.NewrelicLicense, agent.NewrelicPollInterval)
+	agent.plugin = newrelic_platform_go.NewNewrelicPlugin(agent.AgentVersion, agent.NewrelicLicense, agent.NewrelicPollInterval, agent.NewRelicFatalThreshold)
 	agent.plugin.Verbose = agent.Verbose
 
 	agent.cmLk.Lock()
