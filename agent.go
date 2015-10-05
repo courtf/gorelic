@@ -193,18 +193,18 @@ func (agent *Agent) Run() error {
 
 	// Check agent flags and add relevant metrics.
 	if agent.CollectGcStat {
-		addGCMericsToComponent(component, agent.dataSource, agent.GCPollInterval)
+		addGCMetricsToComponent(component, agent.dataSource, agent.GCPollInterval)
 		agent.debug(fmt.Sprintf("Init GC metrics collection. Poll interval %d seconds.", agent.GCPollInterval))
 	}
 
 	if agent.CollectMemoryStat {
-		addMemoryMericsToComponent(component, agent.dataSource, agent.MemoryAllocatorPollInterval)
+		addMemoryMetricsToComponent(component, agent.dataSource, agent.MemoryAllocatorPollInterval)
 		agent.debug(fmt.Sprintf("Init memory allocator metrics collection. Poll interval %d seconds.", agent.MemoryAllocatorPollInterval))
 	}
 
 	if agent.CollectHTTPStat {
 		agent.initTimer()
-		addHTTPMericsToComponent(component, agent.dataSource, httpThroughPutDataSourceKey)
+		addHTTPMetricsToComponent(component, agent.dataSource, httpThroughPutDataSourceKey)
 		agent.debug(fmt.Sprintf("Init HTTP metrics collection."))
 	}
 
