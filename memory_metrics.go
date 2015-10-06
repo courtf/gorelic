@@ -32,7 +32,7 @@ func addMemoryMetricsToComponent(component newrelic_platform_go.IComponent, ds D
 	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.HeapAlloc", filepath.Join(curPath, "HeapAlloc"), units))
 	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.HeapIdle", filepath.Join(curPath, "HeapIdle"), units))
 	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.HeapInuse", filepath.Join(curPath, "HeapInuse"), units))
-	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.HeapObjects", filepath.Join(curPath, "HeapObjects"), units))
+	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.HeapObjects", filepath.Join(curPath, "HeapObjects"), "objects"))
 	component.AddMetrica(NewGaugeMetrica(ds, "runtime.MemStats.HeapReleased", filepath.Join(curPath, "HeapReleased"), units))
 
 	curPath = basePath + "Operations/"
