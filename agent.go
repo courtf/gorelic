@@ -99,38 +99,31 @@ func NewAgent() *Agent {
 // used by proxyWrapper below to record http statuses
 type statusRecorder struct {
 	http.ResponseWriter
-	writeHeader func(status int)
+	agent       *Agent
+	wroteHeader bool
 }
 
-func (sr statusRecorder) WriteHeader(status int) {
-	sr.writeHeader(status)
+func (sr *statusRecorder) WriteHeader(status int) {
+	sr.wroteHeader = true
+	go sr.agent.dataSource.IncCounterForKey(statusKeyFunc(status), 1)
+	sr.ResponseWriter.WriteHeader(status)
+}
+
+func (sr *statusRecorder) Write(b []byte) (int, error) {
+	if !sr.wroteHeader {
+		sr.WriteHeader(http.StatusOK)
+	}
+
+	return sr.ResponseWriter.Write(b)
 }
 
 type proxyWrapper struct {
 	*tHTTPHandler
-	serveHTTP func(w http.ResponseWriter, req *http.Request)
+	agent *Agent
 }
 
 func (pw proxyWrapper) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	pw.serveHTTP(w, req)
-}
-
-func newProxyWrapper(agent *Agent, proxy *tHTTPHandler) proxyWrapper {
-	return proxyWrapper{
-		proxy,
-		func(w http.ResponseWriter, req *http.Request) {
-			proxy.ServeHTTP(
-				statusRecorder{
-					w,
-					func(status int) {
-						go agent.dataSource.IncCounterForKey(statusKeyFunc(status), 1)
-						w.WriteHeader(status)
-					},
-				},
-				req,
-			)
-		},
-	}
+	pw.tHTTPHandler.ServeHTTP(&statusRecorder{w, pw.agent, false}, req)
 }
 
 //WrapHTTPHandlerFunc  instrument HTTP handler functions to collect HTTP metrics
@@ -141,7 +134,7 @@ func (agent *Agent) WrapHTTPHandlerFunc(h tHTTPHandlerFunc) tHTTPHandlerFunc {
 	proxy.timer = agent.HTTPTimer
 
 	if agent.CollectHTTPStatuses {
-		pr := newProxyWrapper(agent, proxy)
+		pr := proxyWrapper{proxy, agent}
 		return pr.ServeHTTP
 	}
 
@@ -157,7 +150,7 @@ func (agent *Agent) WrapHTTPHandler(h http.Handler) http.Handler {
 	proxy.timer = agent.HTTPTimer
 
 	if agent.CollectHTTPStatuses {
-		return newProxyWrapper(agent, proxy)
+		return proxyWrapper{proxy, agent}
 	}
 
 	return proxy
