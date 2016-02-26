@@ -97,7 +97,7 @@ func (ds dataSource) GetHistogramValue(key string, hf HistogramFunc, percentile 
 	} else if histogram, ok := valueContainer.(metrics.Histogram); ok {
 		switch hf {
 		default:
-			return 0, fmt.Errorf("unsupported stat function for histogram: %s\n", hf)
+			return 0, fmt.Errorf("unsupported stat function for histogram: %v\n", hf)
 		case HistogramCount:
 			return float64(histogram.Count()), nil
 		case HistogramMax:
@@ -126,7 +126,7 @@ func (ds dataSource) GetMeterValue(key string, mf MeterFunc) (float64, error) {
 	} else if meter, ok := valueContainer.(metrics.Meter); ok {
 		switch mf {
 		default:
-			return 0, fmt.Errorf("unsupported stat function for meter: %s\n", mf)
+			return 0, fmt.Errorf("unsupported stat function for meter: %v\n", mf)
 		case MeterCount:
 			return float64(meter.Count()), nil
 		case MeterRate1:
@@ -149,7 +149,7 @@ func (ds dataSource) GetTimerValue(key string, tf TimerFunc, percentile float64)
 	} else if timer, ok := valueContainer.(metrics.Timer); ok {
 		switch tf {
 		default:
-			return 0, fmt.Errorf("unsupported stat function for timer: %s\n", tf)
+			return 0, fmt.Errorf("unsupported stat function for timer: %v\n", tf)
 		case TimerCount:
 			return float64(timer.Count()), nil
 		case TimerMax:

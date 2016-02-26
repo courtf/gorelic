@@ -164,36 +164,36 @@ func addRuntimeMetricsToComponent(component newrelic_platform_go.IComponent) {
 
 	ds := newSystemDataSource()
 	metrics := []*systemMetrica{
-		&systemMetrica{
+		{
 			sourceKey:    "Threads",
 			units:        "Threads",
 			newrelicName: "Runtime/System/Threads",
 		},
-		&systemMetrica{
+		{
 			sourceKey:    "FDSize",
 			units:        "fd",
 			newrelicName: "Runtime/System/FDSize",
 		},
 		// Peak virtual memory size
-		&systemMetrica{
+		{
 			sourceKey:    "VmPeak",
 			units:        "bytes",
 			newrelicName: "Runtime/System/Memory/VmPeakSize",
 		},
 		//Virtual memory size
-		&systemMetrica{
+		{
 			sourceKey:    "VmSize",
 			units:        "bytes",
 			newrelicName: "Runtime/System/Memory/VmCurrent",
 		},
 		//Peak resident set size
-		&systemMetrica{
+		{
 			sourceKey:    "VmHWM",
 			units:        "bytes",
 			newrelicName: "Runtime/System/Memory/RssPeak",
 		},
 		//Resident set size
-		&systemMetrica{
+		{
 			sourceKey:    "VmRSS",
 			units:        "bytes",
 			newrelicName: "Runtime/System/Memory/RssCurrent",
